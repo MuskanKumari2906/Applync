@@ -637,6 +637,11 @@ def parse_jd_text(text: str) -> dict:
 
 # ============ BACKGROUND TASKS ============
 
+# SendGrid (primary) — set SENDGRID_API_KEY in .env to enable
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL", os.getenv("SENDER_EMAIL", "noreply@applync.com"))
+
+# SMTP (fallback) — set SMTP_HOST, SMTP_USER, SMTP_PASSWORD to enable
 SMTP_HOST = os.getenv("SMTP_HOST")
 SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
 SMTP_USER = os.getenv("SMTP_USER")
@@ -644,25 +649,54 @@ SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 SENDER_EMAIL = os.getenv("SENDER_EMAIL", "noreply@applync.com")
 
 def send_email_notification(to_email: str, subject: str, html_content: str):
-    if not SMTP_HOST or not SMTP_USER or not SMTP_PASSWORD:
-        print(f"[EMAIL MOCK] To: {to_email} | Subject: {subject}")
-        print(f"[EMAIL CONTENT PREVIEW]\n{html_content[:300]}...\n-------------------")
-        return
-    
-    try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"] = f"Applync Reminders <{SENDER_EMAIL}>"
-        msg["To"] = to_email
-        msg.attach(MIMEText(html_content, "html"))
+    """
+    Send email via SendGrid (if API key configured), else via SMTP,
+    else print a mock preview to console.
+    """
+    # --- Method 1: SendGrid ---
+    if SENDGRID_API_KEY:
+        try:
+            import sendgrid as sg_module
+            from sendgrid.helpers.mail import Mail as SGMail
+            sg = sg_module.SendGridAPIClient(SENDGRID_API_KEY)
+            message = SGMail(
+                from_email=SENDGRID_FROM_EMAIL,
+                to_emails=to_email,
+                subject=subject,
+                html_content=html_content
+            )
+            response = sg.send(message)
+            print(f"[SENDGRID SENT] status={response.status_code} to={to_email} subject={subject}")
+            return
+        except ImportError:
+            print("[EMAIL WARN] sendgrid package not installed. Install: pip install sendgrid")
+        except Exception as e:
+            print(f"[SENDGRID ERROR] {e} — trying SMTP fallback")
 
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-            server.starttls()
-            server.login(SMTP_USER, SMTP_PASSWORD)
-            server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
-        print(f"[EMAIL SENT] Successfully sent email to {to_email}: {subject}")
-    except Exception as e:
-        print(f"[EMAIL ERROR] Failed to send email to {to_email}: {e}")
+    # --- Method 2: SMTP fallback ---
+    if SMTP_HOST and SMTP_USER and SMTP_PASSWORD:
+        try:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = f"Applync <{SENDER_EMAIL}>"
+            msg["To"] = to_email
+            msg.attach(MIMEText(html_content, "html"))
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+                server.starttls()
+                server.login(SMTP_USER, SMTP_PASSWORD)
+                server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
+            print(f"[SMTP SENT] to={to_email} subject={subject}")
+            return
+        except Exception as e:
+            print(f"[SMTP ERROR] {e}")
+
+    # --- Method 3: Mock log (no credentials configured) ---
+    print(f"[EMAIL MOCK] No credentials configured.")
+    print(f"  To: {to_email}")
+    print(f"  Subject: {subject}")
+    print(f"  Preview: {html_content[:200].strip()}...")
+    print("  → Set SENDGRID_API_KEY in your .env to send real emails.")
+
 
 def send_welcome_email_task(email: str, name: str):
     subject = "Welcome to Applync! 🚀"
@@ -702,7 +736,39 @@ def send_interview_scheduled_email(email: str, name: str, company: str, position
     send_email_notification(email, subject, html)
 
 def log_status_change_task(email: str, company: str, position: str, new_status: str):
-    print(f"[BACKGROUND] Status change: {email} → {position} @ {company} → '{new_status}'")
+    """Send a status-change notification email to the user."""
+    status_config = {
+        "interview": ("🎉", "Interview Stage", f"Congratulations! Your application for <strong>{position}</strong> at <strong>{company}</strong> has moved to the interview stage. Time to prepare!"),
+        "offer":     ("🏆", "Offer Received!", f"Amazing news! You have received an offer for <strong>{position}</strong> at <strong>{company}</strong>. Review it carefully and negotiate if needed!"),
+        "rejected":  ("📋", "Application Update", f"Your application for <strong>{position}</strong> at <strong>{company}</strong> was not selected this time. Keep going — the right opportunity is ahead!"),
+        "applied":   ("📝", "Application Tracked", f"Your application for <strong>{position}</strong> at <strong>{company}</strong> has been saved. Good luck!"),
+        "withdrawn": ("🚫", "Application Withdrawn", f"You have withdrawn your application for <strong>{position}</strong> at <strong>{company}</strong>."),
+    }
+    emoji, heading, body_text = status_config.get(new_status, ("📧", "Application Update", f"Your application at <strong>{company}</strong> status changed to <strong>{new_status}</strong>."))
+    subject = f"{emoji} Applync: {heading} — {position} at {company}"
+    html = f"""
+    <html>
+      <body style="font-family: Arial, sans-serif; color: #222; max-width: 560px; margin: 0 auto; padding: 24px;">
+        <div style="background: #4f7cff; border-radius: 8px 8px 0 0; padding: 20px 24px;">
+          <h1 style="color: #fff; margin: 0; font-size: 20px;">{emoji} {heading}</h1>
+        </div>
+        <div style="background: #f9f9fb; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px; padding: 24px;">
+          <p style="font-size: 15px; line-height: 1.6;">{body_text}</p>
+          <table style="border-collapse: collapse; width: 100%; margin-top: 16px;">
+            <tr><td style="padding: 8px 0; font-weight: 600; color: #555; width: 120px;">Company</td><td style="padding: 8px 0;">{company}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: 600; color: #555;">Position</td><td style="padding: 8px 0;">{position}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: 600; color: #555;">New Status</td><td style="padding: 8px 0;"><strong style="text-transform: capitalize;">{new_status}</strong></td></tr>
+          </table>
+          <div style="margin-top: 24px; text-align: center;">
+            <a href="https://applync-frontend.vercel.app/" style="background: #4f7cff; color: #fff; padding: 11px 24px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px;">View in Applync →</a>
+          </div>
+          <p style="color: #888; font-size: 12px; margin-top: 24px; text-align: center;">Applync Job Application Tracker</p>
+        </div>
+      </body>
+    </html>
+    """
+    send_email_notification(email, subject, html)
+
 
 def check_and_send_reminders(user_id: int, db_session_factory):
     # Runs in background to check upcoming deadlines and interviews 1 day away
@@ -1514,6 +1580,50 @@ def get_interview_performance_stats(
         "by_company": list(company_stats.values()),
         "by_round_type": list(round_type_stats.values()),
         "improvement_areas": improvement_areas
+    }
+
+# ─── TEST EMAIL ENDPOINT ──────────────────────────────────────────────────────
+
+@app.post("/test-email")
+def send_test_email(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Send a test email to the logged-in user's address.
+    Use this to verify that SendGrid/SMTP is configured correctly.
+    Visit /docs and click 'Try it out' → Execute after logging in.
+    """
+    subject = "✅ Applync — Email Notifications Working!"
+    html = f"""
+    <html>
+      <body style="font-family: Arial, sans-serif; color: #222; max-width: 560px; margin: 0 auto; padding: 24px;">
+        <div style="background: #4f7cff; border-radius: 8px 8px 0 0; padding: 20px 24px;">
+          <h1 style="color: #fff; margin: 0; font-size: 20px;">✅ Email Notifications are Working!</h1>
+        </div>
+        <div style="background: #f9f9fb; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px; padding: 24px;">
+          <p style="font-size: 15px;">Hi <strong>{current_user.full_name}</strong>,</p>
+          <p style="font-size: 15px; line-height: 1.6;">
+            This is a test email from <strong>Applync</strong>. If you received this, your email notifications are fully set up! 🎉
+          </p>
+          <p style="font-size: 14px; color: #555;">You will automatically receive emails for:</p>
+          <ul style="font-size: 14px; color: #555; line-height: 1.8;">
+            <li>📅 Interview reminders (1 day before)</li>
+            <li>⏰ Application deadline alerts (1 day before)</li>
+            <li>🎉 Status changes (interview, offer, rejected)</li>
+            <li>👋 Welcome emails on registration</li>
+          </ul>
+          <div style="margin-top: 24px; text-align: center;">
+            <a href="https://applync-frontend.vercel.app/" style="background: #4f7cff; color: #fff; padding: 11px 24px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px;">Go to Applync →</a>
+          </div>
+        </div>
+      </body>
+    </html>
+    """
+    send_email_notification(current_user.email, subject, html)
+    return {
+        "status": "sent",
+        "message": f"Test email dispatched to {current_user.email}. Check your inbox (and spam folder)!",
+        "email_method": "sendgrid" if SENDGRID_API_KEY else ("smtp" if SMTP_HOST else "mock_console")
     }
 
 if __name__ == "__main__":

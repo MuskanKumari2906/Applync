@@ -165,8 +165,8 @@ function DeadlineBadge({ deadline }) {
   if (!deadline) return null;
   const days = daysFromNow(deadline);
   const cls = days <= 2 ? 'urgent' : days <= 6 ? 'soon' : 'normal';
-  const label = days < 0 ? 'Overdue' : days === 0 ? 'Today!' : `${days}d left`;
-  return <span className={`deadline-badge ${cls}`}>⏰ {label}</span>;
+  const label = days < 0 ? 'Overdue' : days === 0 ? 'Today' : `${days}d`;
+  return <span className={`deadline-badge ${cls}`}>{label}</span>;
 }
 
 // ─── STAR RATING ──────────────────────────────────────────────────────────────
@@ -288,13 +288,53 @@ function FunnelChart({ stages }) {
   );
 }
 
+// ─── SIDEBAR ICONS ────────────────────────────────────────────────────────────
+const IconDashboard = () => (
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+    <rect x="1" y="1" width="6" height="6" rx="1"/>
+    <rect x="9" y="1" width="6" height="6" rx="1"/>
+    <rect x="1" y="9" width="6" height="6" rx="1"/>
+    <rect x="9" y="9" width="6" height="6" rx="1"/>
+  </svg>
+);
+
+const IconKanban = () => (
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+    <rect x="1" y="1" width="4" height="12" rx="1"/>
+    <rect x="6" y="1" width="4" height="9" rx="1"/>
+    <rect x="11" y="1" width="4" height="6" rx="1"/>
+  </svg>
+);
+
+const IconAnalytics = () => (
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+    <polyline points="1,12 5,7 9,9 15,3"/>
+    <polyline points="11,3 15,3 15,7"/>
+  </svg>
+);
+
+const IconSettings = () => (
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+    <circle cx="8" cy="8" r="2.5"/>
+    <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/>
+  </svg>
+);
+
+const IconLogout = () => (
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+    <path d="M6 14H2a1 1 0 01-1-1V3a1 1 0 011-1h4"/>
+    <polyline points="11,11 15,8 11,5"/>
+    <line x1="15" y1="8" x2="6" y2="8"/>
+  </svg>
+);
+
 // ─── SIDEBAR ──────────────────────────────────────────────────────────────────
 function Sidebar({ user, onLogout, currentPage, onNavigate, jobCount, sidebarOpen, onClose }) {
   const nav = [
-    { key: 'dashboard', label: 'Dashboard', icon: '⊞' },
-    { key: 'kanban',    label: 'Pipeline',   icon: '▦' },
-    { key: 'analytics', label: 'Analytics',  icon: '↗' },
-    { key: 'settings',  label: 'Settings',   icon: '⚙' },
+    { key: 'dashboard', label: 'Dashboard', Icon: IconDashboard },
+    { key: 'kanban',    label: 'Pipeline',  Icon: IconKanban },
+    { key: 'analytics', label: 'Analytics', Icon: IconAnalytics },
+    { key: 'settings',  label: 'Settings',  Icon: IconSettings },
   ];
 
   return (
@@ -314,7 +354,7 @@ function Sidebar({ user, onLogout, currentPage, onNavigate, jobCount, sidebarOpe
               className={`sidebar-nav-item ${currentPage === n.key ? 'active' : ''}`}
               onClick={() => { onNavigate(n.key); onClose(); }}
             >
-              <span className="sidebar-nav-icon">{n.icon}</span>
+              <span className="sidebar-nav-icon"><n.Icon /></span>
               {n.label}
               {n.key === 'dashboard' && jobCount != null && (
                 <span className="sidebar-nav-badge">{jobCount}</span>
@@ -337,10 +377,10 @@ function Sidebar({ user, onLogout, currentPage, onNavigate, jobCount, sidebarOpe
           </div>
           <button
             className="sidebar-nav-item"
-            style={{ color: '#ef4444', marginTop: 4 }}
+            style={{ color: 'var(--danger)' }}
             onClick={onLogout}
           >
-            <span className="sidebar-nav-icon">⎋</span>
+            <span className="sidebar-nav-icon"><IconLogout /></span>
             Log out
           </button>
         </div>
@@ -446,8 +486,8 @@ function AddJobModal({ jobId, onClose, onSaved }) {
           {/* JD Parser */}
           <div className="parser-panel">
             <div className="parser-panel-header" onClick={() => setParseOpen(o => !o)}>
-              <span className="parser-panel-title">✦ Paste Job Description to Auto-fill</span>
-              <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{parseOpen ? '▲ Hide' : '▼ Show'}</span>
+              <span className="parser-panel-title">Auto-fill from Job Description</span>
+              <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>{parseOpen ? 'Hide' : 'Show'}</span>
             </div>
             {parseOpen && (
               <div className="parser-panel-body">
@@ -460,7 +500,7 @@ function AddJobModal({ jobId, onClose, onSaved }) {
                 />
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <button type="button" className="btn btn-secondary btn-sm" onClick={handleParse} disabled={parsing}>
-                    {parsing ? 'Parsing…' : '⚡ Parse & Auto-fill'}
+                    {parsing ? 'Parsing…' : 'Parse & Auto-fill'}
                   </button>
                 </div>
                 {parsedSkills.length > 0 && (
@@ -541,9 +581,9 @@ function AddJobModal({ jobId, onClose, onSaved }) {
             <textarea className="form-textarea" rows={3} value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Key details, prep strategy, referral info…" />
           </div>
 
-          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)' }}>
-            <input type="checkbox" checked={form.is_starred} onChange={e => set('is_starred', e.target.checked)} style={{ accentColor: '#f59e0b' }} />
-            ⭐ Star this application
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 12.5, color: 'var(--text-secondary)' }}>
+            <input type="checkbox" checked={form.is_starred} onChange={e => set('is_starred', e.target.checked)} style={{ accentColor: '#f59e0b', width: 14, height: 14 }} />
+            Mark as starred
           </label>
 
           {error && <div className="auth-error">{error}</div>}
@@ -782,7 +822,7 @@ function OfferModal({ jobId, offer, onClose, onSaved }) {
   return (
     <Modal onClose={onClose}>
       <div className="modal-header">
-        <h2 className="modal-title">💰 {offer ? 'Edit Offer' : 'Record Offer'}</h2>
+        <h2 className="modal-title">{offer ? 'Edit Offer' : 'Record Offer'}</h2>
         <button className="modal-close" onClick={onClose}>✕</button>
       </div>
       <form onSubmit={handleSubmit}>
@@ -845,7 +885,7 @@ function OfferModal({ jobId, offer, onClose, onSaved }) {
         <div className="modal-footer">
           <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
           <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Saving…' : '💾 Save Offer'}
+            {loading ? 'Saving…' : 'Save Offer'}
           </button>
         </div>
       </form>
@@ -1000,7 +1040,7 @@ function JobDetailModal({ jobId, onClose, onRefresh, user }) {
 
               {/* Resume Match Score */}
               <div className="card card-padding" style={{ marginBottom: 20 }}>
-                <div className="detail-section-title">✨ Resume Match Score</div>
+                <div className="detail-section-title">Resume Match Score</div>
                 {!user?.resume_text ? (
                   <p className="text-secondary" style={{ fontSize: 13 }}>
                     Please add your resume text in <strong>Settings</strong> to enable match scoring.
@@ -1045,8 +1085,8 @@ function JobDetailModal({ jobId, onClose, onRefresh, user }) {
                       )}
 
                       {match.suggest.length > 0 && (
-                        <div style={{ padding: 10, background: 'var(--bg-elevated)', borderRadius: 8, fontSize: 12, borderLeft: '3px solid var(--accent)' }}>
-                          <strong>💡 Tip:</strong> Try emphasizing <strong>{match.suggest.join(', ')}</strong> in your application/resume for this role.
+                        <div style={{ padding: '8px 12px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', fontSize: 12.5, borderLeft: '2px solid var(--accent)', color: 'var(--text-secondary)' }}>
+                          Tip: emphasize <strong style={{ color: 'var(--text-primary)' }}>{match.suggest.join(', ')}</strong> for this role.
                         </div>
                       )}
                     </div>
@@ -1074,12 +1114,12 @@ function JobDetailModal({ jobId, onClose, onRefresh, user }) {
               {/* Quick Actions */}
               <div className="card card-padding-sm">
                 <div className="detail-section-title">Quick Actions</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <button className="btn btn-secondary btn-sm" onClick={() => { setShowInterviewModal(true); }}>
-                    + Schedule Interview
+                    Schedule Interview
                   </button>
                   <button className="btn btn-secondary btn-sm" onClick={() => setShowOfferModal(true)}>
-                    💰 {offer ? 'Edit Offer' : 'Record Offer'}
+                    {offer ? 'Edit Offer' : 'Record Offer'}
                   </button>
                   {job.deadline_date && <DeadlineBadge deadline={job.deadline_date} />}
                 </div>
@@ -1101,10 +1141,9 @@ function JobDetailModal({ jobId, onClose, onRefresh, user }) {
               {/* Offer Preview */}
               {offer && (
                 <div className="offer-card has-offer">
-                  <div className="offer-card-title">💰 Offer Received</div>
+                  <div className="offer-card-title">Offer Received</div>
                   {offer.ctc && <div className="offer-ctc">{fmtCurrency(offer.ctc)}</div>}
-                  <div className="offer-salary-note">Annual CTC</div>
-                  <StatusBadge status={offer.negotiation_status} />
+                  <div className="offer-salary-note">Annual CTC &nbsp;<StatusBadge status={offer.negotiation_status} /></div>
                 </div>
               )}
             </div>
@@ -1122,8 +1161,8 @@ function JobDetailModal({ jobId, onClose, onRefresh, user }) {
             </div>
 
             {interviews.length === 0 ? (
-              <div className="empty-state" style={{ padding: '40px 0' }}>
-                <div className="empty-state-icon">📅</div>
+              <div className="empty-state" style={{ padding: '32px 0' }}>
+                <div className="empty-state-icon">—</div>
                 <div className="empty-state-title">No interviews yet</div>
                 <div className="empty-state-text">Schedule your first interview round to start tracking your progress.</div>
               </div>
@@ -1147,16 +1186,16 @@ function JobDetailModal({ jobId, onClose, onRefresh, user }) {
 
                       <div className="timeline-interview-meta">
                         {iv.scheduled_date && (
-                          <div className="timeline-meta-row">📅 {fmtDate(iv.scheduled_date)}</div>
+                          <div className="timeline-meta-row"><span style={{ color: 'var(--text-muted)', minWidth: 52 }}>Date</span>{fmtDate(iv.scheduled_date)}</div>
                         )}
                         {iv.platform && (
-                          <div className="timeline-meta-row">📞 {iv.platform}</div>
+                          <div className="timeline-meta-row"><span style={{ color: 'var(--text-muted)', minWidth: 52 }}>Platform</span>{iv.platform}</div>
                         )}
                         {iv.interviewer_name && (
-                          <div className="timeline-meta-row">👤 {iv.interviewer_name}</div>
+                          <div className="timeline-meta-row"><span style={{ color: 'var(--text-muted)', minWidth: 52 }}>With</span>{iv.interviewer_name}</div>
                         )}
                         {iv.duration_minutes && (
-                          <div className="timeline-meta-row">⏱ {iv.duration_minutes} min</div>
+                          <div className="timeline-meta-row"><span style={{ color: 'var(--text-muted)', minWidth: 52 }}>Duration</span>{iv.duration_minutes} min</div>
                         )}
                       </div>
 
@@ -1181,25 +1220,25 @@ function JobDetailModal({ jobId, onClose, onRefresh, user }) {
                         <div className="interview-feedback-section">
                           {iv.what_went_well && (
                             <div className="feedback-block">
-                              <div className="feedback-label">✅ What went well</div>
+                              <div className="feedback-label">What went well</div>
                               <div className="feedback-text">{iv.what_went_well}</div>
                             </div>
                           )}
                           {iv.improvements && (
                             <div className="feedback-block">
-                              <div className="feedback-label">📈 Improvements</div>
+                              <div className="feedback-label">Improvements</div>
                               <div className="feedback-text">{iv.improvements}</div>
                             </div>
                           )}
                           {iv.follow_up_actions && (
                             <div className="feedback-block">
-                              <div className="feedback-label">🎯 Follow-ups</div>
+                              <div className="feedback-label">Follow-ups</div>
                               <div className="feedback-text">{iv.follow_up_actions}</div>
                             </div>
                           )}
                           {iv.feedback && (
                             <div className="feedback-block">
-                              <div className="feedback-label">📝 Notes</div>
+                              <div className="feedback-label">Notes</div>
                               <div className="feedback-text">{iv.feedback}</div>
                             </div>
                           )}
@@ -1224,8 +1263,8 @@ function JobDetailModal({ jobId, onClose, onRefresh, user }) {
             </div>
 
             {!offer ? (
-              <div className="empty-state" style={{ padding: '40px 0' }}>
-                <div className="empty-state-icon">💰</div>
+              <div className="empty-state" style={{ padding: '32px 0' }}>
+                <div className="empty-state-icon">$</div>
                 <div className="empty-state-title">No offer recorded</div>
                 <div className="empty-state-text">When you receive an offer, record the compensation details here for easy comparison.</div>
               </div>
@@ -1234,7 +1273,7 @@ function JobDetailModal({ jobId, onClose, onRefresh, user }) {
                 <div className="offer-card has-offer">
                   <div className="offer-card-title">Total Compensation</div>
                   {offer.ctc && <div className="offer-ctc">{fmtCurrency(offer.ctc)}</div>}
-                  <div className="offer-salary-note">Annual CTC · <StatusBadge status={offer.negotiation_status} /></div>
+                  <div className="offer-salary-note">Annual CTC &nbsp;<StatusBadge status={offer.negotiation_status} /></div>
 
                   <div className="offer-breakdown" style={{ marginTop: 16 }}>
                     <div className="offer-breakdown-item">
@@ -1341,13 +1380,11 @@ function DeadlineAlerts({ onJobClick }) {
         <div
           key={d.id}
           className={`deadline-alert ${d.days_left <= 2 ? 'urgent' : 'soon'}`}
-          style={{ cursor: 'pointer' }}
           onClick={() => onJobClick(d.id)}
         >
-          <span>⚠️</span>
           <div className="deadline-alert-text">
             <strong>{d.company_name} — {d.position_title}</strong>
-            <span>Deadline in {d.days_left === 0 ? 'today' : `${d.days_left} day${d.days_left !== 1 ? 's' : ''}`}</span>
+            <span>deadline {d.days_left === 0 ? 'today' : `in ${d.days_left} day${d.days_left !== 1 ? 's' : ''}`}</span>
           </div>
         </div>
       ))}
@@ -1398,7 +1435,31 @@ function DashboardPage({ user, onOpenMenu }) {
       return 0;
     });
 
-  if (loading) return <LoadingScreen />;
+  if (loading) return (
+    <>
+      <div className="page-header">
+        <div className="page-header-left">
+          <h1 className="page-title">Dashboard</h1>
+        </div>
+      </div>
+      <div className="page-body">
+        <div className="stats-row">
+          {[1,2,3,4,5,6].map(i => (
+            <div key={i} className="skeleton-card">
+              <div className="skeleton skeleton-stat" />
+              <div className="skeleton skeleton-line short" />
+            </div>
+          ))}
+        </div>
+        {[1,2,3,4].map(i => (
+          <div key={i} className="skeleton-card" style={{ marginBottom: 8 }}>
+            <div className="skeleton skeleton-line medium" style={{ marginBottom: 6 }} />
+            <div className="skeleton skeleton-line short" />
+          </div>
+        ))}
+      </div>
+    </>
+  );
 
   return (
     <>
@@ -1406,11 +1467,11 @@ function DashboardPage({ user, onOpenMenu }) {
         <div className="page-header-left">
           <button className="mobile-menu-btn" onClick={onOpenMenu}>☰</button>
           <h1 className="page-title">Dashboard</h1>
-          <p className="page-subtitle">Welcome back, {user?.full_name?.split(' ')[0]} 👋</p>
+          {user?.full_name && <p className="page-subtitle">Hello, {user.full_name.split(' ')[0]}</p>}
         </div>
         <div className="page-actions">
           <button className="btn btn-primary" onClick={() => { setEditJobId(null); setShowAddModal(true); }}>
-            + New Application
+            + New
           </button>
         </div>
       </div>
@@ -1480,15 +1541,15 @@ function DashboardPage({ user, onOpenMenu }) {
         {/* Job List */}
         {filtered.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-state-icon">📋</div>
+            <div className="empty-state-icon">{jobs.length === 0 ? '+' : '∅'}</div>
             <div className="empty-state-title">{jobs.length === 0 ? 'No applications yet' : 'No results'}</div>
             <div className="empty-state-text">
               {jobs.length === 0
-                ? 'Start tracking your job applications by clicking "New Application".'
+                ? 'Start by adding your first job application.'
                 : 'Try adjusting your search or filter.'}
             </div>
             {jobs.length === 0 && (
-              <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>+ Add First Application</button>
+              <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>Add Application</button>
             )}
           </div>
         ) : (
@@ -1509,9 +1570,11 @@ function DashboardPage({ user, onOpenMenu }) {
                   </div>
 
                   <div className="job-card-meta">
-                    <span className="job-meta-item"><span className="job-meta-item-icon">📅</span>{fmtDateShort(job.application_date)}</span>
-                    {job.location && <span className="job-meta-item"><span className="job-meta-item-icon">📍</span>{job.location}</span>}
-                    {job.salary_range && <span className="job-meta-item"><span className="job-meta-item-icon">💰</span>{job.salary_range}</span>}
+                    <span className="job-meta-item">{fmtDateShort(job.application_date)}</span>
+                    {job.location && <span className="job-meta-item" style={{ color: 'var(--text-muted)' }}>·</span>}
+                    {job.location && <span className="job-meta-item">{job.location}</span>}
+                    {job.salary_range && <span className="job-meta-item" style={{ color: 'var(--text-muted)' }}>·</span>}
+                    {job.salary_range && <span className="job-meta-item">{job.salary_range}</span>}
                   </div>
 
                   <div className="job-card-badges">
@@ -1528,12 +1591,12 @@ function DashboardPage({ user, onOpenMenu }) {
                     className={`star-btn ${job.is_starred ? 'starred' : ''}`}
                     onClick={e => handleStar(e, job.id)}
                     title={job.is_starred ? 'Unstar' : 'Star'}
+                    aria-label={job.is_starred ? 'Unstar application' : 'Star application'}
                   >
-                    {job.is_starred ? '⭐' : '☆'}
+                    {job.is_starred ? '★' : '☆'}
                   </button>
                   <button
                     className="btn btn-ghost btn-sm"
-                    style={{ fontSize: 11 }}
                     onClick={e => { e.stopPropagation(); setEditJobId(job.id); setShowAddModal(true); }}
                   >
                     Edit
@@ -1589,7 +1652,7 @@ function KanbanPage({ user, onOpenMenu }) {
         <div className="page-header-left">
           <button className="mobile-menu-btn" onClick={onOpenMenu}>☰</button>
           <h1 className="page-title">Pipeline</h1>
-          <p className="page-subtitle">Visual view of your application stages</p>
+          <p className="page-subtitle">Application stages</p>
         </div>
       </div>
 
@@ -1609,24 +1672,24 @@ function KanbanPage({ user, onOpenMenu }) {
 
                 <div className="kanban-cards">
                   {colJobs.length === 0 && (
-                    <div className="kanban-empty">No applications here</div>
+                    <div className="kanban-empty">Empty</div>
                   )}
                   {colJobs.map(job => (
                     <div key={job.id} className="kanban-card" onClick={() => setDetailJobId(job.id)}>
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
-                        <div className="job-company-logo" style={{ width: 28, height: 28, fontSize: 11 }}>{job.company_name[0]}</div>
+                        <div className="job-company-logo" style={{ width: 26, height: 26, fontSize: 11 }}>{job.company_name[0]}</div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div className="kanban-card-title" style={{ fontSize: 13 }}>{job.position_title}</div>
+                          <div className="kanban-card-title">{job.position_title}</div>
                           <div className="kanban-card-company">{job.company_name}</div>
                         </div>
-                        {job.is_starred && <span style={{ fontSize: 12 }}>⭐</span>}
+                        {job.is_starred && <span style={{ fontSize: 12, color: '#f59e0b' }}>★</span>}
                       </div>
 
                       <div className="kanban-card-footer">
                         <span className="kanban-card-date">{fmtDateShort(job.application_date)}</span>
-                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
                           {job.current_interview_round > 0 && (
-                            <span className="interview-round-chip" style={{ fontSize: 10 }}>R{job.current_interview_round}</span>
+                            <span className="interview-round-chip">R{job.current_interview_round}</span>
                           )}
                           {job.deadline_date && <DeadlineBadge deadline={job.deadline_date} />}
                         </div>
@@ -1682,7 +1745,7 @@ function AnalyticsPage({ onOpenMenu }) {
         <div className="page-header-left">
           <button className="mobile-menu-btn" onClick={onOpenMenu}>☰</button>
           <h1 className="page-title">Analytics</h1>
-          <p className="page-subtitle">Your job search performance at a glance</p>
+          <p className="page-subtitle">Job search performance</p>
         </div>
       </div>
 
@@ -1772,9 +1835,13 @@ function AnalyticsPage({ onOpenMenu }) {
           {/* Interview Performance */}
           {interviewStats && (
             <div className="analytics-card" style={{ gridColumn: 'span 2' }}>
-              <div className="analytics-card-title">🎙️ Interview Performance by Company</div>
+              <div className="analytics-card-title">Interview Performance by Company</div>
               {interviewStats.by_company.length === 0 ? (
-                <p className="text-secondary" style={{ fontSize: 13 }}>No interview records found. Start scheduling rounds to build stats.</p>
+                <div className="empty-state" style={{ padding: '24px 0' }}>
+                  <div className="empty-state-icon">—</div>
+                  <div className="empty-state-title">No interview data</div>
+                  <div className="empty-state-text">Schedule interview rounds to start building performance stats.</div>
+                </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <table className="offers-table" style={{ marginTop: 0 }}>
@@ -1818,7 +1885,7 @@ function AnalyticsPage({ onOpenMenu }) {
                   
                   {interviewStats.improvement_areas.length > 0 && (
                     <div style={{ marginTop: 8 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 8 }}>🎯 Focus & Improvement Suggestions</div>
+                      <div style={{ fontSize: 10.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 8 }}>Focus Areas</div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {interviewStats.improvement_areas.map(area => (
                           <div key={area.round_type} style={{ padding: 12, background: 'var(--danger-light)', borderLeft: '3px solid var(--danger)', borderRadius: 6, fontSize: 12.5, color: 'var(--text-primary)' }}>
@@ -1897,7 +1964,7 @@ function SettingsPage({ user, updateUser, logout, theme, toggleTheme, onOpenMenu
         <div className="page-header-left">
           <button className="mobile-menu-btn" onClick={onOpenMenu}>☰</button>
           <h1 className="page-title">Settings</h1>
-          <p className="page-subtitle">Manage your profile and preferences</p>
+          <p className="page-subtitle">Profile & preferences</p>
         </div>
       </div>
 
@@ -1937,7 +2004,7 @@ function SettingsPage({ user, updateUser, logout, theme, toggleTheme, onOpenMenu
                   <label className="form-label">Resume / CV Skills & Text (for Match Scoring)</label>
                   <textarea className="form-textarea" rows={6} value={resumeText} onChange={e => setResumeText(e.target.value)} placeholder="Paste your resume skills list, experience details, or raw text here…" />
                 </div>
-                {msg && <div style={{ color: 'var(--success)', fontSize: 13, padding: '8px 12px', background: 'var(--success-light)', borderRadius: 8 }}>✓ {msg}</div>}
+                {msg && <div className="feedback-success">{msg}</div>}
                 {error && <div className="auth-error">{error}</div>}
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <button type="submit" className="btn btn-primary" disabled={saving}>
@@ -1977,10 +2044,10 @@ function SettingsPage({ user, updateUser, logout, theme, toggleTheme, onOpenMenu
             </div>
           </div>
 
-          {/* Danger Zone */}
+          {/* Account */}
           <div className="settings-card">
             <div className="settings-card-header">
-              <div className="settings-card-title" style={{ color: 'var(--danger)' }}>Account</div>
+              <div className="settings-card-title">Account</div>
             </div>
             <div className="settings-card-body">
               <div className="settings-row">

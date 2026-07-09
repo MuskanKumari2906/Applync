@@ -3,7 +3,7 @@
 A full-stack web application for managing and tracking job applications with real-time statistics and filtering capabilities.
 
 ## 🚀 Live Demo
-[https://applync.vercel.app](https://applync.vercel.app)
+[https://applync-frontend.vercel.app](https://applync-frontend.vercel.app)
 
 ## 📋 Features
 - **User Authentication**: Secure JWT-based registration and login with bcrypt password hashing
